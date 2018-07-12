@@ -1,0 +1,80 @@
+{% extends 'etl\base.html' %}
+{% block head %}
+    <title>ETL 表单</title>
+{% endblock %}
+
+{% block body %}
+    <div class="container-fluid">
+        <form method="post" enctype="multipart/form-data" class="form-horizontal">
+        {% csrf_token %}
+            <div class="form-group" id="fg_user_name">
+                {{ form.user_name.label }}
+                {{ form.user_name }}
+            </div>
+            <div class="form-group" id="fg_source_container">
+                {{ form.source_container.label }}
+                {{ form.source_container }}
+            </div>
+            <div class="form-group" id="fg_target_container">
+                {{ form.target_container.label }}
+                {{ form.target_container }}
+            </div>
+            <div class="form-group" id="fg_source_file">
+                {{ form.source_file.label }}
+                {{ form.source_file }}
+            </div>
+            <div class="form-group" id="fg_source_sql">
+                {{ form.source_sql.label }}
+                {{ form.source_sql }}
+            </div>
+            <div class="form-group" id="fg_target_sql">
+                {{ form.target_sql.label }}
+                {{ form.target_sql }}
+            </div>
+            <div class="form-group" id="fg_truncate">
+                {{ form.truncate.label }}
+                {{ form.truncate }}
+            </div>
+            <button type="submit" class="btn btn-default">提交任务</button>
+
+        </form>
+        <hr>
+        <p id="test_js">{{ test }}</p>
+    </div>
+
+    <script>
+        $(document).ready(function () {
+            $("#id_source_sql").attr('rows','1')
+            $("#id_target_sql").attr('rows','1')
+            $(document).on('change','#id_source_container',function () {
+               var choosed = $("#id_source_container").val()
+                if (choosed == '1'){
+                   $("#id_source_file").removeAttr("disabled")
+                   $("#fg_source_file").show()
+                   $("#id_source_sql").attr("disabled",'')
+                   $("#fg_source_sql").hide()
+                }if (choosed != '1'){
+                   $("#id_source_sql").removeAttr("disabled")
+                   $("#fg_source_sql").show()
+                   $("#id_source_file").attr("disabled",'')
+                   $("#fg_source_file").hide()
+                }
+            })
+            $(document).on('change','#id_target_container',function () {
+               var choosed = $("#id_target_container").val()
+                if (choosed == '5'){
+                   $("#id_target_sql").attr({"disabled":'','rows':'1'})
+                   $("#fg_target_sql").hide()
+                   $("#id_truncate").attr("disabled",'')
+                   $("#fg_truncate").hide()
+                }if (choosed != '5'){
+                   $("#id_target_sql").removeAttr("disabled")
+                   $("#fg_target_sql").show()
+                   $("#id_truncate").removeAttr("disabled")
+                   $("#fg_truncate").show()
+                }
+            })
+            })
+
+    </script>
+{% endblock %}
