@@ -2,31 +2,79 @@ from django.shortcuts import render
 from apps.etl.form import taskForm
 from python_etl.settings import MEDIA_ROOT
 import time
+from apps.etl.main.process import TaskProcesser
+from django.http import HttpResponse
+import csv
 # Create your views here.
 
 
 def etlForm(request):
+    task_args = {'user_name': '',
+                'source_container': '',
+                'source_sql':'',
+                'souce_file_path': '',
+                'target_container': '',
+                'target_sql': '',
+                'truncate': '',
+                'task_status':''}
+
     if request.POST:
+        t_p = TaskProcesser()
+        task_args['user_name'] = request.POST['user_name']
+        task_args['source_container'] = request.POST['source_container']
+        task_args['target_container'] = request.POST['target_container']
+
+        # 数据源信息 保存文件
+        souce_file = request.FILES['source_file']
+        souce_file_path = MEDIA_ROOT + r'\upload\etl' + '\\' + task_args['user_name'] + '_' +time.strftime('%Y%m%d%H%M%S',time.localtime()) +'.csv'
+
+        with open(souce_file_path,'wb+') as f:
+            for chunk in souce_file.chunks():
+                f.write(chunk)
+        task_args['source_file_path'] = souce_file_path
+
+        task_args['source_table'] = request.POST.get('source_table','')
+
+        # 目标库信息
+        task_args['target_table'] = request.POST['target_table']
+        task_args['truncate'] = request.POST['truncate']
+
+        task_args['task_status'] = 'sended'
+        checkReturnCSV = t_p.take_task(task_args)
+
+        return render(request, 'etl/reviewCSV.html', {'checkReturnCSV': checkReturnCSV,
+                                                      'error': '',
+                                                      'mode': 2})
+    return render(request,'etl/form.html')
+
+
+def reviewCSV(request):
+    if request.POST:
+        error = ''
+        form = taskForm(request.POST,request.FILES)
+        if request.POST['user_name'] =='':
+            error='填写用户名'
         user_name = request.POST['user_name']
+        if not request.POST['source_container']:
+            error='请选择数据源'
         source_container = request.POST['source_container']
-        test=[]
-        if source_container =='1':
-
-            souce_file = request.FILES['source_file']
-            #拼接文件保存路径
-            file_name = MEDIA_ROOT + r'\upload\etl' + '\\' + user_name + '_' +time.strftime('%Y%m%d%H%M%S',time.localtime()) +'.csv'
-            test = [user_name, source_container,file_name]
-            # 保存文件
-            with open(file_name,'wb+') as f:
-                for chunk in souce_file.chunks():
-                    f.write(chunk)
-            # 目标库信息
-            target_container = request.POST['target_container']
-            target_sql = request.POST['target_sql']
-            truncate = True if 'truncate'in request.POST.key() else False
-            test = [user_name, source_container, file_name,target_container,target_sql,truncate]
-
-
-        return render(request,'etl/form.html',{'form':taskForm,
-                                               'test':test})
-    return render(request,'etl/form.html',{'form':taskForm})
+        if str(form['source_file'].data) != 'None':
+            if len(form['source_file'].data) > 0:
+                souce_file = request.FILES['source_file']
+                # 拼接文件保存路径
+                souce_file_path = MEDIA_ROOT + r'\upload\etl' + '\\' + user_name + '_' + time.strftime(
+                    '%Y%m%d%H%M%S', time.localtime()) + '.csv'
+                # 保存文件
+                with open(souce_file_path, 'wb+') as f:
+                    for chunk in souce_file.chunks():
+                        f.write(chunk)
+                tp = TaskProcesser()
+                json_str = tp.reviewCSV(souce_file_path)
+                return render(request, 'etl/reviewCSV.html',{'json_str':json_str,
+                                                                 'error':error,
+                                                                'mode':1})
+            else:
+                error = '文件为空'
+        else:
+            error = '未选择上传文件'
+        return render(request, 'etl/reviewCSV.html', {'error': error})

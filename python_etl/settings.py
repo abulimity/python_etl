@@ -56,7 +56,9 @@ ROOT_URLCONF = 'python_etl.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(os.path.dirname(__file__), 'templates').replace('\\', '/'), ],
+        'DIRS': [os.path.join(os.path.dirname(__file__),
+                '../apps/etl/templates').replace('\\', '/'),
+                ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [

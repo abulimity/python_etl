@@ -1,0 +1,36 @@
+{% extends 'etl\base.html' %}
+{% block head %}
+    <title>ETL 表单测试</title>
+{% endblock %}
+
+{% block body %}
+    <form id="testform" enctype="multipart/form-data" method="post">
+        姓名：<input type="text" id="id_source_file" name="a" >
+        单位：<input type="text" id="id_danwei" name="b" >
+        上传文件：<input type="file" name="source_file" value="ddd">
+        <input type="button" id="id_submitForm" value="预览">
+    </form>
+    <hr>
+    <p id="p">no data</p>
+
+    <script>
+        $(document).ready(function () {
+            $("#id_submitForm").on('click',function () {
+                {#console.log("got you");#}
+                {#var form = $("#testform");#}
+                {#var formdata = new FormData(form[0]);#}
+                $.ajax({
+                    url:'/etl/display/',
+                    type:'post',
+                    cache:false,
+                    data:new FormData($("#testform")[0]),
+                    processData:false,
+                    contentType:false,
+                    success:function (data) {
+                        $("#p").html(data);
+                    }
+                })
+            })
+        })
+    </script>
+{% endblock %}
