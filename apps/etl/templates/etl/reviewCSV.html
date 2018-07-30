@@ -1,18 +1,24 @@
 {% if error %}
     <p>{{ error }}</p>
 {% elif mode == 1 %}
-<div>
-  <!-- Nav tabs -->
-  <ul class="nav nav-tabs" role="tablist">
-    <li role="presentation" class="active"><a href="#review" aria-controls="review" role="tab" data-toggle="tab">预览</a></li>
-    <li role="presentation"><a href="#result_log" aria-controls="result_log" role="tab" data-toggle="tab">传输结果</a></li>
-
-  </ul>
-
-  <!-- Tab panes -->
-  <div class="tab-content">
-    <div role="tabpanel" class="tab-pane active" id="review">
-        <div>
+{#<div>#}
+{#  <!-- Nav tabs -->#}
+{#  <ul class="nav nav-tabs" role="tablist">#}
+{#    <li role="presentation" class="active"><a href="#review" aria-controls="review" role="tab" data-toggle="tab">预览</a></li>#}
+{#    <li role="presentation"><a href="#result_log" aria-controls="result_log" role="tab" data-toggle="tab">传输结果</a></li>#}
+{##}
+{#  </ul>#}
+{##}
+{#  <!-- Tab panes -->#}
+{#  <div class="tab-content">#}
+{#    <div role="tabpanel" class="tab-pane active" id="review">#}
+{#       #}
+{#    </div>#}
+{#    <div role="tabpanel" class="tab-pane" id="result_log">#}
+{#    </div>#}
+{#  </div>#}
+{#</div>#}
+ <div>
             {% ifnotequal  json_str.null_count 0 %}
             <span>
                 发现{{ json_str.null_count }}行 空行，处理后
@@ -31,11 +37,6 @@
                 </tr>
             {% endfor %}
         </table>
-    </div>
-    <div role="tabpanel" class="tab-pane" id="result_log">
-    </div>
-  </div>
-</div>
 {% elif mode == 2 %}
     {{ checkReturnCSV }}
 {% endif %}
