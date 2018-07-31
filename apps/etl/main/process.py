@@ -1,83 +1,85 @@
 # -*- coding: utf-8 -*-
-from apps.etl.main.database import Oradb
+# from apps.etl.main.database import Oradb
 import os,time
 import shutil
 from subprocess import *
-
-
+from python_etl.settings import MEDIA_ROOT
 
 class TaskProcesser:
-    def __init__(self):
-        self.user_id = {
-            '7':'mk/mk@wtbzdb1',
-            '8':'sjgl/Ju8THs_sj@SJGL_NEW'
-        }
 
-    def getFilesReady(self,task_args):
-        # taskArgsr['task_status'] = 'recived'
-        csv_path = task_args['source_file_path']
-        csv_name = csv_path.replace('\\','/').split('/')[-1]
+    def __init__(self,task_args):
+        self.db_config = {'7','mk/mk@wtbzdb1',
+                          '8','sjgl/sjgl@sjgl_new'}
+        self.source_file_path = task_args["source_file_path"] # type: str
+        self.task_id = self.source_file_path.split("\\")[-1].split(".")[0]
+        self.task_path = MEDIA_ROOT +'\\process\\' +self.source_file_path.split("\\")[-1].split(".")[0]
+        if self.task_id not in os.listdir(MEDIA_ROOT +'\\process\\'):
+            os.mkdir(self.task_path)
+            shutil.copy(self.source_file_path,self.task_path)
+            os.chdir(self.task_path)
+        self.source_file_path = self.task_path + '\\' +self.source_file_path.split("\\")[-1]
+        self.target_table = task_args['target_table']
+        self.truncate = 'truncate' if task_args['truncate'] == '1' else ''
+        self.target_container = task_args['target_container']
+        self.log_file =''
 
-        # 创建任务目录
-        os.chdir( '/'.join(csv_path.replace('\\','/').split('/')[:-1]))
-        if csv_name.split('.')[0] in os.listdir():
-            os.chdir(csv_name.split('.')[0])
-        else:
-            os.mkdir(csv_name.split('.')[0])
-            os.chdir(csv_name.split('.')[0])
 
-        shutil.copy(task_args['source_file_path'],'.')
-
-        # ctl
-        ctl_name = csv_name.split('.')[0] + '.ctl'
-        with open(csv_name,'r',encoding='gbk') as f:
+    def _createCSV(self):
+        # 读取CSV文件表头，生成导入对应列信息
+        with open(self.source_file_path, 'r', encoding='gbk') as f:
             title_line = f.readline()
-        truncate = 'truncate' if task_args['truncate'] == '1' else ''
-        
-        # title = [l.replace('\n','') for l in title_line.split(',')]
-        # _column_str = ''
-        # for t in title:
-        #     _column_str += t + '  ' + 'char(200)' +',\n'
-        # column_str = _column_str[:-2]
-        db = Oradb(task_args['target_container'])
-        columns_lst= db.columns(task_args['target_table'])
-        _column_str=''
-        for columns in columns_lst:
-            _column_str += columns['COLUMN_NAME'] + '    ' +'CHAR'+'('+'100'+')'+',\n'
+        title = [l.replace('\n', '') for l in title_line.split(',')]
+        _column_str = ''
+        for t in title:
+            _column_str += t + '  ' + 'char(100)' + ',\n'
         column_str = _column_str[:-2]
+        # 数据库方法
+        # db = Oradb(task_args['target_container'])
+        # columns_lst= db.columns(task_args['target_table'])
+        # _column_str=''
+        # for columns in columns_lst:
+        #     _column_str += columns['COLUMN_NAME'] + '    ' +'CHAR'+'('+'100'+')'+',\n'
+        # column_str = _column_str[:-2]
         ctl_content = '''
-LOAD DATA 
-    INFILE '{0}'
-    INTO TABLE {1}
-    {2}
-FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '"'
-TRAILING NULLCOLS
-(
-{3}
-)
-        '''.format(csv_name,task_args['target_table'],truncate,column_str)
-        with open(ctl_name,'w+',encoding='utf-8') as ctl_f:
+        LOAD DATA 
+            INFILE '{0}'
+            INTO TABLE {1}
+            {2}
+        FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '"'
+        TRAILING NULLCOLS
+        (
+        {3}
+        )
+                '''.format(self.source_file_path, self.target_table, self.truncate, column_str)
+        ctl_name = self.task_id + '.ctl'
+        with open(ctl_name, 'w+', encoding='utf-8') as ctl_f:
             ctl_f.write(ctl_content)
 
+        return
+
+    def _createBat(self):
+        ctl_name=self.task_id +'.ctl'
         # bat
-        bat_name = csv_name.split('.')[0] + '.bat'
-        userid = self.user_id[task_args['target_container']]
+        userid = self.db_config[self.target_container]
         bat_content = '''
         sqlldr userid={0} control={1} log={2} bad={3}
-        '''.format(userid,ctl_name,csv_name.split('.')[0] + '.log',csv_name.split('.')[0] + '.bad')
-
+        '''.format(userid,ctl_name,self.task_id.split('.')[0] + '.log',self.task_id.split('.')[0] + '.bad')
+        bat_name = self.task_id + '.bat'
         with open(bat_name, 'w+', encoding='utf-8') as bat_f:
             bat_f.write(bat_content)
+        return
 
-        return  os.getcwd(),bat_name
 
-    def doBat(self,task_args):
-        now_path,bat_name = self.getFilesReady(task_args)
+    def doBat(self):
+        self._createCSV()
+        self._createBat()
+        bat_name = self.task_id + '.bat'
         p = Popen(bat_name,stdout=PIPE,stderr=PIPE)
         while p.poll() is None :
             count_now=p.stdout.readline().decode('cp936').split(' ')[-1]
             return count_now
-        return bat_name
+        self.log_file = self.source_file_path.split('.')[0] +'.log'
+        return 'done'
 
 
 
@@ -117,5 +119,5 @@ if __name__ == '__main__':
                   'source_sql': '',
                   'source_container': '1'}
 
-    test = TaskProcesser()
-    test.doBat(task_args)
+    test = TaskProcesser(task_args)
+    print(test.source_file_path)

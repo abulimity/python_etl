@@ -3,13 +3,13 @@ from apps.etl.form import taskForm
 from python_etl.settings import MEDIA_ROOT
 import time
 from apps.etl.main.process import TaskProcesser
-from apps.etl.main.database import Oradb
+# from apps.etl.main.database import Oradb
 from django.http import HttpResponse
 from subprocess import *
 
 # Create your views here.
 
-COUNT_NOW ='0'
+COUNT_NOW ={}
 def etlForm(request):
     task_args = {'user_name': '',
                 'source_container': '',
@@ -34,6 +34,8 @@ def etlForm(request):
             for chunk in souce_file.chunks():
                 f.write(chunk)
         task_args['source_file_path'] = souce_file_path
+        global COUNT_NOW
+        COUNT_NOW[souce_file_path]=''
 
         task_args['source_table'] = request.POST.get('source_table','')
 
@@ -43,24 +45,23 @@ def etlForm(request):
 
         task_args['task_status'] = 'sended'
 
-        t_p = TaskProcesser()
-        now_path, bat_name = t_p.getFilesReady(task_args)
-        p = Popen(bat_name, stdout=PIPE, stderr=PIPE)
-        while p.poll() is None:
-            global COUNT_NOW
-            COUNT_NOW = p.stdout.readline().decode('cp936').split(' ')[-1]
+        t_p = TaskProcesser(task_args)
+        count_now =  t_p.doBat()
+        while count_now !='done':
+            return HttpResponse(count_now)
         log=[]
-        with open(bat_name[:-3]+'log','r') as logs:
+        with open(t_p.log_file,'r') as logs:
             for line in logs.readlines():
                 log.append(line+"\n")
         return HttpResponse(log)
         # return render(request, 'etl/form.html', {'error': res})
     return render(request,'etl/form.html')
 
-def checkTable(request):
-    db = Oradb(request.POST['target_container'])
-    res = db.checkTable(request.POST['target_table'])[0][0]
-    return HttpResponse(res)
+# 异步检查目标表是否存在
+# def checkTable(request):
+#     db = Oradb(request.POST['target_container'])
+#     res = db.checkTable(request.POST['target_table'])[0][0]
+#     return HttpResponse(res)
 
 def showProgress(request):
     global COUNT_NOW

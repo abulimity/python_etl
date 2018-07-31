@@ -231,7 +231,8 @@
                                         var progress = setInterval(function () {
                                             $.ajax({
                                                 url:'/etl/showProgress/',
-                                                type:'get',
+                                                type:'post',
+                                                data:'',
                                                 success:function (res) {
                                                     console.log(res);
                                                     $("#test_js").text(res);
