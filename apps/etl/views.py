@@ -1,99 +1,76 @@
-from django.shortcuts import render
-from apps.etl.form import taskForm
-from python_etl.settings import MEDIA_ROOT
-import time
-from apps.etl.main.process import TaskProcesser
-# from apps.etl.main.database import Oradb
 from django.http import HttpResponse
-from subprocess import *
+from django.shortcuts import render
+
+from apps.etl.form import TaskForm
+from apps.etl.main.database import Oradb
+from apps.etl.main.process import TaskProcesser
+from apps.etl.models import DataContainer
+
 
 # Create your views here.
 
-COUNT_NOW ={}
 def etlForm(request):
-    task_args = {'user_name': '',
-                'source_container': '',
-                'source_sql':'',
-                'souce_file_path': '',
-                'target_container': '',
-                'target_sql': '',
-                'truncate': '',
-                'task_status':''}
-
-    if request.POST:
-        t_p = TaskProcesser()
-        task_args['user_name'] = request.POST['user_name']
-        task_args['source_container'] = request.POST['source_container']
-        task_args['target_container'] = request.POST['target_container']
-
-        # 数据源信息 保存文件
-        souce_file = request.FILES['source_file']
-        souce_file_path = MEDIA_ROOT + r'\upload\etl' + '\\' + task_args['user_name'] + '_' +time.strftime('%Y%m%d%H%M%S',time.localtime()) +'.csv'
-
-        with open(souce_file_path,'wb+') as f:
-            for chunk in souce_file.chunks():
-                f.write(chunk)
-        task_args['source_file_path'] = souce_file_path
-        global COUNT_NOW
-        COUNT_NOW[souce_file_path]=''
-
-        task_args['source_table'] = request.POST.get('source_table','')
-
-        # 目标库信息
-        task_args['target_table'] = request.POST['target_table']
-        task_args['truncate'] = request.POST['truncate']
-
-        task_args['task_status'] = 'sended'
-
-        t_p = TaskProcesser(task_args)
-        count_now =  t_p.doBat()
-        while count_now !='done':
-            return HttpResponse(count_now)
-        log=[]
-        with open(t_p.log_file,'r') as logs:
-            for line in logs.readlines():
-                log.append(line+"\n")
-        return HttpResponse(log)
-        # return render(request, 'etl/form.html', {'error': res})
-    return render(request,'etl/form.html')
+    if request.method=='POST':
+        form = TaskForm(request.POST,request.FILES)
+        if form.is_valid():
+            task_info = form.save()
+            tp = TaskProcesser(task_info)
+            log = tp.doBat(task_info)
+            log_list = []
+            with open(log,'r') as log_file:
+                for line in log_file.readlines():
+                    if line.replace("\n","") == "":
+                        continue
+                    ln = line.replace("  ","").split(",")
+                    log_list.append(ln)
+            return render(request,'etl/reviewCSV.html',{'title':'结果报告','csv_list':log_list[-15:-10],'cnt':'..'})
+        return render(request, 'etl/errors.html', {'errors': form.errors.as_data()})
+    else:
+        return render(request,'etl/form.html',{'source_cons':DataContainer.objects.filter(type__in=['database','upload']),
+                                               'target_cons': DataContainer.objects.filter(type__in=['database', 'download']),
+                                               'uploads':[ i.id for i in DataContainer.objects.filter(type='upload')],
+                                                'downloads':[i.id for i in DataContainer.objects.filter(type='download')]})
 
 # 异步检查目标表是否存在
-# def checkTable(request):
-#     db = Oradb(request.POST['target_container'])
-#     res = db.checkTable(request.POST['target_table'])[0][0]
-#     return HttpResponse(res)
-
+def checkTable(request):
+    db = Oradb(request.POST['db_info'])
+    res = int(db.checkTable(request.POST['table_name'])[0][0])
+    return HttpResponse(res)
+# 创建目标表
+def createTable(request):
+    if request.method == "POST":
+        csv_file = request.FILES['file']
+        table_name = request.POST.get('table_name')
+        # 读取CSV文件表头，生成导入对应列信息
+        title_line = csv_file.readline().decode('gbk')
+        title = [l.replace('\n', '') for l in title_line.split(',')]
+        column_str ='    varchar2(100),\n'.join(title).strip() + '    varchar2(100)'
+        create_str = """
+CREATE TABLE {0}
+({1})
+        """.format(table_name.upper(),column_str)
+        return HttpResponse(create_str)
+# 执行创建语句
+def doCreate(request):
+    if request.method == "POST":
+        sql = request.POST.get('sql')
+        db = Oradb(request.POST.get('db_info'))
+        result = db.excute(sql)
+        return HttpResponse(result)
+# 查询进度
 def showProgress(request):
-    global COUNT_NOW
-    return HttpResponse(COUNT_NOW)
-
+    db = Oradb(request.POST['db_info'])
+    cnt_target = int(db.countTable(request.POST['table_name'])[0][0])
+    return HttpResponse(cnt_target)
+# 预览文件
 def reviewCSV(request):
-    if request.POST:
-        error = ''
-        form = taskForm(request.POST,request.FILES)
-        if request.POST['user_name'] =='':
-            error='填写用户名'
-        user_name = request.POST['user_name']
-        if not request.POST['source_container']:
-            error='请选择数据源'
-        source_container = request.POST['source_container']
-        if str(form['source_file'].data) != 'None':
-            if len(form['source_file'].data) > 0:
-                souce_file = request.FILES['source_file']
-                # 拼接文件保存路径
-                souce_file_path = MEDIA_ROOT + r'\upload\etl' + '\\' + user_name + '_' + time.strftime(
-                    '%Y%m%d%H%M%S', time.localtime()) + '.csv'
-                # 保存文件
-                with open(souce_file_path, 'wb+') as f:
-                    for chunk in souce_file.chunks():
-                        f.write(chunk)
-                tp = TaskProcesser()
-                json_str = tp.reviewCSV(souce_file_path)
-                return render(request, 'etl/reviewCSV.html',{'json_str':json_str,
-                                                                 'error':error,
-                                                                'mode':1})
-            else:
-                error = '文件为空'
-        else:
-            error = '未选择上传文件'
-        return render(request, 'etl/reviewCSV.html', {'error': error})
+    if request.method == "POST":
+        csv_file = request.FILES['file']
+        csv_list = []
+        i = 1
+        for line in csv_file.readlines():
+            ln = line.decode('gbk').split(",")
+            ln.insert(0,i)
+            csv_list.append(ln)
+            i += 1
+        return  render(request,'etl/reviewCSV.html',{'title':'预览100行','csv_list':csv_list[:100],'cnt':len(csv_list)})

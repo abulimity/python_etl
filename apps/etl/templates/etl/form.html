@@ -1,271 +1,366 @@
-{% extends 'etl\base.html' %}
+{% extends 'etl/base.html'%}
+
 {% block head %}
-    <title>ETL 表单</title>
+    <title>Django表单测试</title>
+    <style>
+        div .row{
+            padding-top: 30px;
+        }
+    </style>
 {% endblock %}
 
 {% block body %}
     <div class="container-fluid">
-        <form method="post" id="testform" enctype="multipart/form-data" class="form-horizontal">
-            {% csrf_token %}
-            <div class="row">
-            <div class="col-lg-6 col-md-6">
-                <div class="form-group" id="fg_user_name">
-                    <label class="control-label" for="id_user_name">姓名：</label>
-                    <input type="text" class="form-control" id="id_user_name" name="user_name"/>
-                </div>
-            </div>
-            <div class="col-lg-6 col-md-6"></div>
-            </div>
-            <div class="row">
-                <div class="col-lg-6 col-md-6">
-                    <div class="form-group" id="fg_source_container">
-                        <label class="control-label" for="id_source_container">数据源：</label>
+        <ul class="nav nav-tabs">
+            <li class="active"><a href="">提交任务</a></li>
+            <li><a href="">历史任务</a></li>
+        </ul>
+        <div class="row">
+            <div class="col-lg-offset-2 col-md-offset-2 col-sm-offset-2 col-lg-6 col-md-6 col-sm-6">
+                <form name="task_form" id="task_form" class="form-horizontal" method="post" enctype="multipart/form-data" autocomplete="off">
+                    <div id="fg_user_name" class="form-group has-feedback">
+                        <label for="id_user_name">姓名：</label>
+                        <input class="form-control" id="id_user_name" name="user_name" type="text" maxlength="30" placeholder="姓名">
+                    </div>
+                    <div id="fg_source_container" class="form-group has-feedback">
+                        <label for="id_source_container">数据来源：</label>
                         <select class="form-control" id="id_source_container" name="source_container">
-                            <option value="">--------</option>
-                            <option id="id_option_1" value="1">上传CSV文件</option>
-                            <option id="id_option_2" value="2">MK</option>
-                            <option id="id_option_3" value="3">SJGL</option>
-                            <option id="id_option_4" value="4">ODS.SELECT_1010</option>
-                            <option id="id_option_5" value="5">ODS.APP_1010_MK</option>
+                            <option value="" selected>------</option>
+                            {% for source_con in source_cons %}
+                                <option value="{{ source_con.pk }}">{{ source_con.name }}</option>
+                            {% endfor %}
                         </select>
                     </div>
-                </div>
-                <div class="col-lg-6 col-md-6">
-                    <div class="form-group" id="fg_target_container">
-                        <label class="control-label" for="id_target_containe">目标：</label>
+                    <div id="fg_source_file" class="form-group has-feedback">
+                        <label for="id_source_file">CSV文件：</label>
+                        <div class="input-group">
+                            <input class="form-control" id="id_source_file" name="source_file" type="file" maxlength="30" placeholder="CSV文件">
+                            <div class="input-group-btn">
+                                <button id="id_review_btn" class="btn btn-warning" type="button">预览</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="fg_source_table" class="form-group has-feedback">
+                        <label for="id_source_table">数据源表名：</label>
+                        <input class="form-control" id="id_source_table" name="source_table" type="text" maxlength="30" placeholder="目标表名">
+                    </div>
+                    <div id="fg_target_container" class="form-group has-feedback">
+                        <label for="id_target_container">导入目标：</label>
                         <select class="form-control" id="id_target_container" name="target_container">
-                            <option value="">--------</option>
-                            <option id="id_option_6" value="6">下载文件</option>
-                            <option id="id_option_7" value="7">MK</option>
-                            <option id="id_option_8" value="8">SJGL</option>
-                            <option id="id_option_9" value="9">ODS.SELECT_1010</option>
-                            <option id="id_option_10" value="10">ODS.APP_1010_MK</option>
+                            <option value="" selected>------</option>
+                            {% for target_con in target_cons %}
+                                    <option value="{{ target_con.id }}">{{ target_con.name }}</option>
+                            {% endfor %}
                         </select>
                     </div>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-lg-6 col-md-6">
-                    <div class="form-group" id="fg_source_table">
-                        <label class="control-label" for="id_source_table">源数据库表名：</label>
-                        <input type="text" class="form-control" id="id_source_table" name="source_table">
+                    <div id="fg_download">
+                        <button id="id_download" name="download" type="button" class="btn btn-success">下载数据</button>
                     </div>
-                    <div class="form-group" id="fg_source_file">
-                        <label class="control-label" for="id_source_file">选择文件：</label>
-                        <input type="file" id="id_source_file" name="source_file" onchange="$('#id_source_file_path').val($('#id_source_file').val());" style="display: none">
-                        <input type="text" id="id_source_file_path" name="source_file_path" class="form-control" readonly>
-                        <input type="button"class="btn btn-default" onclick="$('#id_source_file').click();" value="浏览" id="id_source_file_btn">
+                    <div id="fg_target_table" class="form-group has-feedback">
+                        <label for="id_target_table">目标表名：</label>
+                        <input class="form-control" id="id_target_table" name="target_table" type="text" maxlength="30" placeholder="目标表名">
                     </div>
-                </div>
-                <div class="col-lg-6 col-md-6">
-                    <div class="form-group" id="fg_target_table">
-                        <label class="control-label" for="id_target_table">目标数据库表名：</label>
-                        <input type="text" class="form-control" id="id_target_table" name="target_table">
-                    </div>
-                    <div class="form-group" id="fg_truncate">
-                        <label class="control-label">是否清空目标表：
-                            <label class="radio-inline" for="id_truncate_y" id="l_truncate">
-                                <input type="radio" name="truncate" id="id_truncate_y" value="1">是
+                    <div id="fg_truncate" class="form-group">
+                        <div class="checkbox">
+                            <label>
+                                <input id="id_truncate" name="truncate" type="checkbox"> 清空目标表
                             </label>
-                            <label class="radio-inline" for="id_truncate_n" id="l_truncate">
-                                <input type="radio" name="truncate" id="id_truncate_n" value="0" checked>否
-                            </label>
-                        </label>
+                        </div>
                     </div>
+                    <button id="id_submit_btn" name="submit_btn" class="btn btn-primary" type="button" >提交任务</button>
+
+                </form>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-offset-1 col-md-offset-1 col-sm-offset-1 col-lg-8 col-md-8 col-sm-8">
+                <div id="id_return" class="panel panel-info">
+
                 </div>
             </div>
-            <div class="row">
-                <input class="btn btn-default"  type="button" id="id_submitTask" value="提交任务"/>
-                <input class="btn btn-default" type="button" id="id_reviewCSV" value="预览"/>
-            </div>
-        </form>
+        </div>
     </div>
-    <hr>
-    <div class="container-fluid">
-        <p id="test_js"></p>
-    </div>
+<script>
+    {#  创建目标表  #}
+    function createTable() {
+        $("#id_target_table").siblings("#id_create_sql").remove();
+        $("#id_target_table").siblings("#id_create_btn").remove();
+        $("#id_source_file").trigger("blur");
+        if ($("#fg_source_file").hasClass("has-error")) {
+        }else {
+            var formDate = new FormData();
+            var sql = '';
+            formDate.append("file",$("#id_source_file")[0].files[0]);
+            formDate.append("table_name",$("#id_target_table").val());
+            $.ajax({
+                url:'/etl/createTable/',
+                type:'post',
+                data:formDate,
+                processData: false,
+                contentType: false,
+                success:function (data) {
+                    sql = data;
+                    $("#id_target_table").siblings("span").after('<textarea id="id_create_sql" rows="8" class="form-control">'+sql+'</textarea><button id="id_create_btn" class="form-control btn btn-primary" type="button">执行</button>');
+                }
+            });
+        }
+    }
+    {# 执行建表按钮 #}
+    $(document).on("click","#id_create_btn",function () {
+        var v_create_sql = $.trim($("#id_create_sql").val())
+        if (v_create_sql==""){
+        }
+        $.post(
+            '/etl/doCreate/',
+            {'sql':$("#id_create_sql").val(),'db_info':$("#id_target_container").val()},
+            function (result) {
+                if (result!="None") {
+                    $("#id_target_table").trigger("blur");
+                    $("#id_create_sql").val(result);
+                    $("#id_create_sql").attr("disabled","");
+                    $("#id_create_btn").text("请重新点击创建，并检查语句。");
+                    $("#id_create_btn").attr("disabled","");
+                }else{
+                    $("#id_target_table").trigger("blur");
+                    $("#id_create_btn").remove();
+                    $("#id_create_sql").val("创建成功！");
+                    $("#id_create_sql").attr({"disabled":"","rows":"1"});
+                }
+            }
+        );
+    });
+    $(document).ready(function () {
+        $("#fg_source_file").addClass("hide");
+        $("#fg_source_table").addClass("hide");
+        $("#fg_target_table").addClass("hide");
+        $("#fg_download").addClass("hide");
+        $("#fg_truncate").addClass("hide");
 
-
-    <script>
-        $(document).ready(function () {
-            $("#fg_source_file").hide();
-            $("#id_submitForm").hide();
-
+        {# 实现数据选择逻辑 #}
             {# 判断目标选择 #}
             $(document).on('change','#id_source_container',function () {
+                var choosed = $("#id_source_container").val();
+                var is_upload = new Boolean(false);
+                var uploads = new Array();
+                uploads = {{ uploads }}
+                for (var i=0;i<uploads.length;i++){
+                    if (choosed==uploads[i]){
+                        is_upload=true
+                    }
+                }
+                if (choosed == ""){
+                    $("#fg_source_file").addClass("hide");
+                    $("#fg_source_table").addClass("hide");
+                }else {
+                    if (is_upload == true){
+                        $("#fg_source_file").removeClass("hide");
+                        $("#fg_source_table").addClass("hide");
+                    } else{
+                        $("#fg_source_file").addClass("hide");
+                        $("#fg_source_table").removeClass("hide");
+                    }
+                }
+            });
 
-               var choosed = $("#id_source_container").val();
-                if (choosed == '1'){
-                   $("#id_source_file").removeAttr("disabled");
-                   $("#fg_source_file").show();
-                   $("#id_source_table").attr("disabled","");
-                   $("#fg_source_table").hide();
-                   $("#id_option_6").hide();
+        $(document).on('change','#id_target_container',function () {
+            var choosed = $("#id_target_container").val();
+                var is_upload = new Boolean(false);
+                var uploads = new Array();
+                uploads = {{ downloads }}
+                for (var i=0;i<uploads.length;i++){
+                    if (choosed==uploads[i]){
+                        is_upload=true
+                    }
                 }
-                if (choosed != '1'){
-                   $("#id_source_table").removeAttr("disabled");
-                   $("#fg_source_table").show();
-                   $("#id_source_file").attr("disabled",'');
-                   $("#id_source_file").removeAttr("required");
-                   $("#fg_source_file").hide();
-                   $("#id_option_6").show();
-                }
-            });
-            {# 判断目标选择 #}
-            $(document).on('change','#id_target_container',function () {
-               var choosed = $("#id_target_container").val();
-                if (choosed == '6'){
-                   $("#id_target_table").attr({"disabled":''});
-                   $("#fg_target_table").hide();
-                   $("#id_truncate").attr("disabled",'');
-                   $("#fg_truncate").hide();
-                   $("#id_option_1").hide();
-                }if (choosed != '6'){
-                   $("#id_target_table").removeAttr("disabled");
-                   $("#fg_target_table").show();
-                   $("#id_truncate").removeAttr("disabled");
-                   $("#fg_truncate").show();
-                   $("#id_option_1").show();
+                {#console.log('choosed:'+choosed+' is_upload'+is_upload);#}
+                if (choosed=="") {
+                    $("#fg_download").addClass("hide");
+                    $("#fg_target_table").addClass("hide");
+                    $("#fg_truncate").addClass("hide");
+                }else {
+                    if (is_upload==true) {
+                        $("#fg_download").removeClass("hide");
+                        $("#fg_target_table").addClass("hide");
+                        $("#fg_truncate").addClass("hide");
+                    }else {
+                        $("#fg_download").addClass("hide");
+                        $("#fg_target_table").removeClass("hide");
+                        $("#fg_truncate").removeClass("hide");
+                    }
                 }
             });
-            {# AJAX 预览文件内容 #}
-            $(document).on('click','#id_reviewCSV',function () {
-                if ($("#id_user_name").val()==""){
-                    $("#fg_user_name").addClass('has-error');
-                }else{
-                    $("#fg_user_name").removeClass('has-error');
-                    if ($("#id_source_container").val()==""){
-                        $("#id_source_container").addClass('has-error');
-                        if ( $("#id_source_container").next('span').val()=="") {
-                        }else {
-                            $("#id_source_container").after('<span id="error_message" class="help-block" style="color: #c9302c">请选择数据源！</span>');
+
+        {#  拦截预览  #}
+        $("#id_review_btn").click(function () {
+            $("#id_source_file").triggerHandler('blur');
+            if ($("#fg_source_file").hasClass("has-error")) {
+
+            }else {
+                var formDate = new FormData();
+                formDate.append("file",$("#id_source_file")[0].files[0]);
+                $.ajax({
+                    url:'/etl/display/',
+                    type:'post',
+                    data:formDate,
+                    processData: false,
+                    contentType: false,
+                    success:function (data) {
+                        $("#id_return").html(data);
+                    }
+                })
+            }
+        });
+        {#  拦截提交  #}
+        $("#id_submit_btn").click(function () {
+            $("#task_form input:visible,#task_form select:visible").trigger('blur');
+            var num_error = $("#task_form div:visible.has-error").length;
+            console.log($("#task_form div:visible.has-error"));
+            console.log(num_error);
+            if (num_error){
+                console.log(num_error);
+                console.log($("#task_form div:visible.has-error"));
+                return false;}
+            else {
+                $("#id_submit_btn").text('正在导入').attr('disabled','');
+                $("#id_submit_btn").after('<h3><span id="id_cnt_target" class="label label-info">loading...</span></h3>');
+                $("#id_cnt_target").removeClass("label-success");
+                $("#id_cnt_target").addClass("label-info");
+                var progress = setInterval(function () {
+                        $.post(
+                        '/etl/showProgress/',
+                        {"db_info":$("#id_target_container").val(),"table_name":$("#id_target_table").val(),"truncate":$("#id_truncate").prop('checked')},
+                        function (res) {
+                            $("#id_cnt_target").text(res);
                         }
-                    }else{
-                        $("#id_source_container").next('span').remove();
-                        if ($("#id_source_file").val()==""){
-                        if ( $("#id_source_file_btn").next('span').val()=="") {
-                        }else {
-                            $("#id_source_file_btn").after('<span id="error_message" class="help-block" style="color: #c9302c">请选择文件！</span>');
-                        }
+                    )
+
+                    },1000);
+                var formData = new FormData($("#task_form")[0]);
+                $.ajax({
+                url:'/etl/submittask/',
+                type:'post',
+                cache:false,
+                data:formData,
+                processData:false,
+                contentType:false,
+                beforeSend:function(){
+                    console.log('start');
+                },
+                success:function (data) {
+                    clearInterval(progress);
+                    $("#id_cnt_target").removeClass("label-info");
+                    $("#id_cnt_target").addClass("label-success");
+                    $("#id_submit_btn").text('完成导入');
+                    $("#id_return").html(data);
+                }
+                });
+            }
+        });
+        $("#task_form :input").blur(function () {
+            {# 清空已有提示 #}
+            $(this).siblings("#gl-feedback").remove();
+            var errorMsg = "";
+            {# 检查用户名 #}
+            if ($(this).is("#id_user_name")) {
+                var v_use_name = $.trim($(this).val());
+                if (v_use_name.length < 3 || v_use_name.length > 30) {
+                    errorMsg = "请输入3到30个字符。";
+                    $(this).after('<span id="gl-feedback" class="glyphicon glyphicon-remove form-control-feedback"></span><span id="gl-feedback" class="help-block">' + errorMsg + '</span>');
+                    $("#fg_user_name").addClass("has-error");
+                }else{$("#fg_user_name").removeClass("has-error");}
+
+            }
+            {#  检查数据来源  #}
+            if ($(this).is("#id_source_container")) {
+                var v_source_container = $.trim($(this).val());
+                if (v_source_container == "") {
+                    errorMsg = "请选择数据来源。";
+                    $(this).after('<span id="gl-feedback" class="help-block">' + errorMsg + '</span>');
+                    $("#fg_source_container").addClass("has-error");
+                }else{$("#fg_source_container").removeClass("has-error");}
+            }
+            {#  检查数据文件  #}
+            if ($(this).is("#id_source_file")) {
+                var v_source_file = $.trim($(this).val());
+                if (v_source_file == "") {
+                    errorMsg = "请选择上传文件。";
+                    $("#fg_source_file").addClass("has-error");
+                }else{$("#fg_source_file").removeClass("has-error");}
+            }
+            {#  检查数据源表名  #}
+            if ($(this).is("#id_source_table")) {
+                var v_source_table = $.trim($(this).val());
+                if (v_source_table == "") {
+                    errorMsg = "请输入表名。";
+                    $(this).after('<span id="gl-feedback" class="help-block">' + errorMsg + '</span>');
+                    $("#fg_source_table").addClass("has-error");
                 } else {
-                            $("#id_source_file_btn").next('span').remove();
-                            $.ajax({
-                            url:'/etl/display/',
-                            type:'post',
-                            cache:false,
-                            data:new FormData($("#testform")[0]),
-                            processData:false,
-                            contentType:false,
-                            success:function (data) {
-                                $("#test_js").html(data);
-                                $("#id_submitForm").show();
+                    $("#fg_source_table").removeClass("has-error");
+                    v_source_container = $.trim($("#id_source_container").val());
+                    $.post('/etl/checkTable/',
+                        {db_info:v_source_container,table_name:v_source_table},
+                        function (res) {
+                            if (res!="0"){
+                                $("#id_source_table").after('<span id="gl-feedback" class="glyphicon glyphicon-ok form-control-feedback"></span>');
+                                $("#fg_source_table").addClass("has-success").removeClass("has-error");
+                            }else {
+                                errorMsg = "表不存在。";
+                                $("#id_source_table").after('<span id="gl-feedback" class="glyphicon glyphicon-remove form-control-feedback"></span><span id="gl-feedback" class="help-block">' + errorMsg + '</span>');
+                                $("#fg_source_table").addClass("has-error").removeClass("has-success");
                             }
                         });
-                }}}
-            })
-            {#验证目标表是否存在#}
-            $("#id_target_table").on('focusout',function () {
-                if ($("#id_target_container").val()==""){
-                            if ( $("#id_target_container").next('span').val()=="") {
-                            }else {
-                                $("#id_target_container").after('<span id="error_message" class="help-block" style="color: #c9302c">请选择目标！</span>');
-                            }
-                        }else{
-                            $("#id_target_container").next('span').remove();
-                            if ($("#id_target_table").val()==""){
-                                        $("#fg_target_table").addClass('has-error');
-                                    }else{
-                                        $("#fg_target_table").removeClass('has-error');
-                                         $.ajax({
-                    url:'/etl/checkTable/',
-                    type:'post',
-                    data:new FormData($("#testform")[0]),
-                    processData:false,
-                    contentType:false,
-                    success:function (res) {
-                        if (res=='0')  {
-                            console.log('get');
-                                if ( $("#id_target_table").next('span').val()=="") {
-                                }else {
-                                    $("#id_target_table").after('<span id="error_message" class="help-block" style="color: #c9302c">表不存在！</span>');
-                                }
-                        }else{
-                            $("#id_target_table").next('span').remove();
-                        }
                     }
-                })
-            }}});
-
-            {# AJAX 提交任务 #}
-            $(document).on('click','#id_submitTask',function () {
-                if ($("#id_user_name").val()==""){
-                    $("#fg_user_name").addClass('has-error');
-                }else{
-                    $("#fg_user_name").removeClass('has-error');
-                    if ($("#id_source_container").val()==""){
-                        $("#id_source_container").addClass('has-error');
-                        if ( $("#id_source_container").next('span').val()=="") {
-                        }else {
-                            $("#id_source_container").after('<span id="error_message" class="help-block" style="color: #c9302c">请选择数据源！</span>');
-                        }
-                    }else{
-                        $("#id_source_container").next('span').remove();
-                        if ($("#id_target_container").val()==""){
-                            if ( $("#id_target_container").next('span').val()=="") {
-                            }else {
-                                $("#id_target_container").after('<span id="error_message" class="help-block" style="color: #c9302c">请选择目标！</span>');
-                            }
-                        }else{
-                            $("#id_target_container").next('span').remove();
-                            if ($("#id_source_file").val()==""){
-                                if ( $("#id_source_file_btn").next('span').val()=="") {
-                                }else {
-                                    $("#id_source_file_btn").after('<span id="error_message" class="help-block" style="color: #c9302c">请选择文件！</span>');
+            }
+            {#  检查目标库  #}
+            if ($(this).is("#id_target_container")) {
+                var v_target_container = $.trim($(this).val());
+                if (v_target_container == "") {
+                    errorMsg = "请选择导入目标。";
+                    $(this).after('<span id="gl-feedback" class="help-block">' + errorMsg + '</span>');
+                    $("#fg_target_container").addClass("has-error");
+                }else{$("#fg_target_container").removeClass("has-error");}
+            }
+            {#  检查是否清空  #}
+            if ($(this).is("#id_truncate")) {
+                var v_truncate = $(this).prop('checked');
+                if (v_truncate) {
+                    errorMsg = "清空目标表！。";
+                    $("#id_truncate").before('<span id="gl-feedback" class="glyphicon glyphicon-exclamation-sign form-control-feedback"></span>');
+                    $("#fg_truncate").addClass("has-warning");
+                }else{$("#fg_truncate").removeClass("has-warning");}
+            }
+            {#  检查目标表名  #}
+            if ($(this).is("#id_target_table")) {
+                var v_target_table = $.trim($(this).val());
+                if (v_target_table == "") {
+                    errorMsg = "请输入表名。";
+                    $(this).after('<span id="gl-feedback" class="help-block">' + errorMsg + '</span>');
+                    $("#id_target_table").siblings("#id_create_sql").remove();
+                    $("#id_target_table").siblings("#id_create_btn").remove();
+                    $("#fg_target_table").addClass("has-error");
+                } else {
+                    $("#fg_target_table").removeClass("has-error");
+                    $("#id_target_container").trigger('blur');
+                    var num_error = !$("#fg_target_container").hasClass('has-error');
+                    if (num_error){
+                        v_target_container = $.trim($("#id_target_container").val());
+                        $.post('/etl/checkTable/',
+                            {db_info: v_target_container, table_name: v_target_table},
+                            function (res) {
+                                if (res != "0") {
+                                    $("#id_target_table").after('<span id="gl-feedback" class="glyphicon glyphicon-ok form-control-feedback">');
+                                    $("#fg_target_table").addClass("has-success").removeClass("has-error");
+                                } else {
+                                    errorMsg = "表不存在。";
+                                    $("#id_target_table").after('<span id="gl-feedback" class="help-block">' + errorMsg + '<a href="#" onclick="createTable();return false;" >创建</a></span>')
+                                    $("#fg_target_table").addClass("has-error").removeClass("has-success");
                                 }
-                            } else {
-                                    $("#id_source_file_btn").next('span').remove();
-                                    if ($("#id_target_table").val()==""){
-                                        $("#fg_target_table").addClass('has-error');
-                                    }else{
-                                        $("#fg_target_table").removeClass('has-error');
-                                        var progress = setInterval(function () {
-                                            $.ajax({
-                                                url:'/etl/showProgress/',
-                                                type:'post',
-                                                data:'',
-                                                success:function (res) {
-                                                    console.log(res);
-                                                    $("#test_js").text(res);
-                                                }
-                                            })
-                                        },1000);
-                                        console.log('get');
-                                        var formData = new FormData($("#testform")[0]);
-                                        $.ajax({
-                                        url:'/etl/submittask/',
-                                        type:'post',
-                                        cache:false,
-                                        data:formData,
-                                        processData:false,
-                                        contentType:false,
-                                        success:function (data) {
-                                            clearInterval(progress);
-                                            $("#test_js").text(data);
-                                        }
-                                    });
-                                }
-                            }
-                        }
+                            });
+                    }else {
                     }
                 }
-            })
-            {# 子页面脚本 #}
-                $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
-                      e.target // newly activated tab
-                      e.relatedTarget // previous active tab
-                })
-            })
-
-
-    </script>
+            }
+        })
+    })
+</script>
 {% endblock %}

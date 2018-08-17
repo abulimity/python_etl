@@ -1,12 +1,18 @@
-from django import forms
-from apps.etl.models import sourceContainer, targetContainer
-from django.forms import widgets
+from django.forms import ModelForm
+
+from apps.etl.models import Task
 
 
-class taskForm(forms.Form):
-    user_name = forms.CharField(label='姓名',max_length=30,widget=widgets.TextInput(attrs={'class':'form-control'}))
-    source_container = forms.ModelChoiceField(label='数据来源',queryset=sourceContainer.objects.all(),empty_label='-------')
-    source_file = forms.FileField(label='源文件')
-    source_sql = forms.CharField(label='数据源SQL',widget=forms.Textarea)
-    target_container = forms.ModelChoiceField(label='数据目标',queryset=targetContainer.objects.all(),empty_label='-------')
-    target_sql = forms.CharField(label='目标数据库SQL',widget=forms.Textarea)
+class TaskForm(ModelForm):
+
+    class Meta:
+        model=Task
+        fields='__all__'
+        labels = {'user_name': '姓名',
+                  'source_container':'数据来源',
+                  'source_file':'选择CSV文件',
+                  'source_table':'数据源表名',
+                  'target_container':'目标数据库',
+                  'target_table':'目标表名',
+                  'truncate':'清空目标表',}
+        # widgets = {'user_name': forms.TextInput(attrs={'class':'form-control'})}

@@ -1,20 +1,11 @@
-from apps.etl.main.process import TaskProcesser
-from subprocess import *
-import time
+import cx_Oracle
 
-task_args = {'target_container': '7',
-             'task_status': 'recived',
-             'target_table': 'python_etl_test',
-             'source_table': '', 'target_sql': '',
-             'source_file_path': 'E:\\project\\python_etl\\media\\upload\\etl\\FDFDFD_20180727110339.csv',
-             'user_name': '杨哲',
-             'truncate': '1',
-             'source_sql': '',
-             'source_container': '1'}
+conn = cx_Oracle.connect('mk/mk@wtbzdb1')
+cursor = conn.cursor()
+sql = """CREATE TABLE FDSAF
+(局向    varchar2(100),
+责任人    varchar2(100),
+综调账号    varchar2(100),
+编码    varchar2(100))"""
 
-test = TaskProcesser()
-now_path, bat_name = test.getFilesReady(task_args)
-p = Popen(bat_name, stdout=PIPE, stderr=PIPE)
-while p.poll() is None:
-    count_now = p.stdout.readline().decode('cp936').split(' ')[-1]
-    print(count_now)
+cursor.execute(sql)

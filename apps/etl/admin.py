@@ -1,22 +1,32 @@
 from django.contrib import admin
-from apps.etl.models import ETLUser, sourceContainer, targetContainer
+
+from apps.etl.models import Task, DataContainer
+
 
 # Register your models here.
-class AdminETLUser(admin.ModelAdmin):
-    list_display = ('user_name',
+class AdminTask(admin.ModelAdmin):
+    list_display = ('pk',
+                  'user_name',
                   'source_container',
-                  'source_sql',
+                  'source_table',
                   'source_file',
                   'target_container',
-                  'target_sql',
-                  'truncate')
+                  'target_table',
+                  'truncate',
+                  'create_time',
+                  'status',
+                  'cnt_target',
+                  'cnt_source')
 
 class AdminSourceContainer(admin.ModelAdmin):
-    list_display = ('name','type')
+    list_display = ('pk',
+                    'name',
+                    'type',
+                    'user_id',
+                    'pass_word',
+                    'ip',
+                    'port',
+                    'service_name')
 
-class AdminTargetContainer(admin.ModelAdmin):
-    list_display = ('name','type')
-
-admin.site.register(ETLUser,AdminETLUser)
-admin.site.register(sourceContainer,AdminSourceContainer)
-admin.site.register(targetContainer,AdminTargetContainer)
+admin.site.register(Task,AdminTask)
+admin.site.register(DataContainer,AdminSourceContainer)

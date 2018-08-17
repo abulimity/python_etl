@@ -1,42 +1,21 @@
-{% if error %}
-    <p>{{ error }}</p>
-{% elif mode == 1 %}
-{#<div>#}
-{#  <!-- Nav tabs -->#}
-{#  <ul class="nav nav-tabs" role="tablist">#}
-{#    <li role="presentation" class="active"><a href="#review" aria-controls="review" role="tab" data-toggle="tab">预览</a></li>#}
-{#    <li role="presentation"><a href="#result_log" aria-controls="result_log" role="tab" data-toggle="tab">传输结果</a></li>#}
-{##}
-{#  </ul>#}
-{##}
-{#  <!-- Tab panes -->#}
-{#  <div class="tab-content">#}
-{#    <div role="tabpanel" class="tab-pane active" id="review">#}
-{#       #}
-{#    </div>#}
-{#    <div role="tabpanel" class="tab-pane" id="result_log">#}
-{#    </div>#}
-{#  </div>#}
-{#</div>#}
- <div>
-            {% ifnotequal  json_str.null_count 0 %}
-            <span>
-                发现{{ json_str.null_count }}行 空行，处理后
-            </span>
-            {% endifnotequal %}
-            <span>
-                共：{{ json_str.total_count }}行。预览100行：
-            </span>
-        </div>
-        <table class="table table-striped table-hover">
-            {% for tr in json_str.tr %}
-                <tr>
-                    {% for td in tr %}
-                        <td>{{ td }}</td>
-                    {% endfor %}
-                </tr>
+<div class="panel-heading"><strong>{{ title }}</strong></div>
+<div class="panel-body">
+    <p>此文件共有<strong>{{ cnt }}</strong>行。</p>
+</div>
+<table class="table table-condensed">
+    <thead>
+    {% for td in csv_list|first %}
+        <th>{{ td }}</th>
+    {% endfor %}
+    </thead>
+    {% for tr in csv_list|slice:"1:" %}
+
+        <tr>
+            {% for td in tr %}
+                <td>{{ td }}</td>
             {% endfor %}
-        </table>
-{% elif mode == 2 %}
-    {{ checkReturnCSV }}
-{% endif %}
+        </tr>
+    {% endfor %}
+</table>
+
+
